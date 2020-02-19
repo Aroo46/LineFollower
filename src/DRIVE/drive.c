@@ -28,7 +28,9 @@ int8_t tab_of_weight_left [NUMBER_OF_LEFT_SENSORS] = {-1, -3, -8, -20};
 int8_t tab_of_weight_right [NUMBER_OF_RIGHT_SENSORS] = {20, 1, 3, 8};
 uint8_t Basic_speed = 20;
 
+#if REG_ON == 1
 static void Set_Speed(wejscie_obiektu we);
+#endif
 
 
 #if REG_ON == 0

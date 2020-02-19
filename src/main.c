@@ -63,6 +63,7 @@ int main (void){
 	DRIVER_BIN1_OFF;
 	tr_cls();			// Funkcja czyszczaca terminal
 	tr_cursor_off();	// Funkcja ukrywajaca migajacy kursor na terminalu
+
 #if REG_ON == 1
 	wejscie_obiektu we = {0};
 	wyjscie_obiektu wyj = {0};
@@ -85,10 +86,10 @@ int main (void){
 #endif
 		//Show_sensors();
 #if REG_ON == 0
-		//Drive();
-		//TIM2->CCR2 = 40;
-		//TIM2->CCR3 = 40;
-		//Show_sensors();
+		Drive();
+		TIM2->CCR2 = 40;
+		TIM2->CCR3 = 40;
+		Show_sensors();
 #endif
 
 #if REG_ON == 2
