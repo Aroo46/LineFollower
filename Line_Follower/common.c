@@ -35,8 +35,8 @@ void Timer1_Init (void){
 	TCCR1B |= (1<<WGM12);								//Ustawienie trybu FAST PWM
 	TCCR1A |= (1<<COM1A1)|(1<<COM1B1);					//Wyzerowanie OC1 przy porównaniu, ustawienie przy wartoœci BOTTOM OCR1n
 	TCCR1B |= (1<<CS11)|(1<<CS10);						//Preskaler = 64, fPWM = 1kHz
-	OCR1A = 140;											//Wypelnienie PWMa - PIN PD5
-	OCR1B = 140;											//Wypelnienie PWMa - PIN PD4
+	OCR1A = 140;										//Wypelnienie PWMa - PIN PD5
+	OCR1B = 140;										//Wypelnienie PWMa - PIN PD4
 
 }
 

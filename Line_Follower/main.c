@@ -26,6 +26,17 @@ volatile uint8_t calc_right = 0;
 
 int main ( void ){
 
+#if REG_ON == 1
+	wejscie_obiektu we = {0};
+	wyjscie_obiektu wyj = {0};
+	wyjscie_obiektu w_zad = {0};
+#endif
+#if REG_ON == 2
+	wejscie_obiektu we = {0, 20, 0, 0, 0};
+	wyjscie_obiektu wyj = {0, 0, 0};
+	wyjscie_obiektu w_zad = {0, 0, 0};
+#endif
+
 	Ext_Interrupt_Init();													//Inicjalizacja przerwan zewnetrznych - enkodery
 	ADC_Init();																//Inicjalizacja modu³u ADC
 	Timer0_Init();															//Inicjalizacja Timer0
@@ -34,7 +45,6 @@ int main ( void ){
 	Led_Init();																//Inicjalizacja diod LED
 	Button_Init();															//Inicjalizacja klawiszy
 	USART_Init(__UBRR);														//Inicjalizacja UART
-	pid_Init(P_term_sens_tab, 0, D_term_sens_tab, &PD_Sensors );			//Inicjalizacja regulatora PD dla sensorów
 	//TODO: Dokonczyc regulator PID dla sensorow!!
 
 	sei();																	//W³¹czenie globalnych przerwañ
@@ -83,6 +93,24 @@ int main ( void ){
 
 	/*TEST PRZERWAN ZEWNETRZNYCH*/
 	while(1){
+#if REG_ON == 1
+		w_zad.position = 0;
+		//TIM2->CCR2 = 20;
+		wyj.position = PID_obiekt(we);
+		//Show_PID_test(we,wyj,w_zad);
+		we.reg_speed = reg_PID(w_zad,wyj);
+		//Menu(we, wyj, w_zad);
+#endif
+
+#if REG_ON == 2
+		wyj.position = PD_obiekt(we);
+		we.reg_speed = reg_PD_pozycja(w_zad, wyj);
+		wyj.speed_of_left_eng = Odczyt_lewy_enkoder();
+		wyj.speed_of_right_eng = Odczyt_prawy_enkoder();
+		we.reg_speed_translation = reg_PD_translacji(we, wyj, w_zad);
+		we.reg_speed_rotation = reg_PD_rotacji(we, wyj, w_zad);
+
+#endif
 		/*if(calc_left >= 35){
 			for(uint8_t licz = 0; licz<500; licz++){
 				LED_RIDE_ON;
