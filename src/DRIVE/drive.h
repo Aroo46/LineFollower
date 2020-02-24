@@ -23,7 +23,7 @@
 #define NUMBER_OF_LEFT_SENSORS		4
 #define NUMBER_OF_RIGHT_SENSORS		4
 // 0 - BRAK REGULATORA, 1 - REGULATOR PD NA POZYCJE, 2 - REGULATOR + ENKODERY
-#define REG_ON						2
+#define REG_ON						1
 /*****************************************************************/
 /***************************VARIABLES*****************************/
 #if REG_ON == 1

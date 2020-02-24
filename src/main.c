@@ -40,10 +40,10 @@ int main (void){
 	USART_Init(); //inicjalizacja USART
 
 	GPIO_init(); //Konfiguracja odpowiednich PINów/ Portów
+	Timer_Counter_init(); //Wlaczenie Timera do przerwan "systemowych"
 
 	PWM_config();
 #if REG_ON == 2
-	Timer_Counter_init();
 	Encoder_mode_config();
 #endif
 	//Wlaczenie Bloku NVIC - przerwania od peryferiow - do rdzenia
@@ -77,12 +77,19 @@ int main (void){
 #endif
 	while(1){
 #if REG_ON == 1
-		w_zad.position = 0;
-		//TIM2->CCR2 = 20;
-		wyj.position = PID_obiekt(we);
-		//Show_PID_test(we,wyj,w_zad);
-		we.reg_speed = reg_PID(w_zad,wyj);
-		//Menu(we, wyj, w_zad);
+		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
+		if(Program_state){
+			w_zad.position = 0;
+			//TIM2->CCR2 = 20;
+			wyj.position = PID_obiekt(we);
+			//Show_PID_test(we,wyj,w_zad);
+			we.reg_speed = reg_PID(w_zad,wyj);
+			//Menu(we, wyj, w_zad);
+			LED_PE9_ON;
+		}else{
+			LED_PE9_OFF;
+		}
+
 #endif
 		//Show_sensors();
 #if REG_ON == 0
@@ -133,9 +140,14 @@ void USART3_IRQHandler (void){
 }
 
 void TIM3_IRQHandler (void){
+	uint16_t sprawdz_timer;								//Zmienna do obs³ugi timera sprzêtowego
+	sprawdz_timer = ProgTimer2;							//do sprawdz_timer przypisujemy wartoœc timera programowego
+	if(sprawdz_timer) ProgTimer2 = --sprawdz_timer;		//Je¿eli wiêksza od 0 - zmienjszamy j¹ o 1 i przypisujemy do timera programowego
+
 	if(TIM3->SR & TIM_SR_UIF){
 		TIM3->SR =~TIM_SR_UIF;
 	}
+
 }
 
 /************************************************************/

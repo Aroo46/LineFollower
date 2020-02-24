@@ -38,7 +38,8 @@
 #define LED_PE10_OFF		GPIOE->BRR=GPIO_BRR_BR_10
 /*********************************************************************************/
 /*******************************VARIABLES******************************************/
-
+extern volatile uint16_t ProgTimer2;
+extern uint8_t Program_state;
 
 /*********************************************************************************/
 
@@ -49,6 +50,9 @@ void RCC_Init(void); // Funkcja inicjalizacyjna, uruchamiajaca zegar RCC dla odp
 void Encoder_mode_config (void); //Konfiguracja wejsc enkodera
 void GPIO_init(void); //Konfiguracja portów I/O
 void Timer_Counter_init(void);	//Inicjalizacja timer'a/counter'a
+void SuperDebounce (volatile uint32_t *KPIN, uint32_t key_mask, uint16_t rep_time,
+		uint16_t rep_wait, void (*push_proc) (void), void (*rep_proc) (void));
+void ChangeProgramState (void);
 /**********************************************************************************/
 
 #endif /* CONFIG_CONFIG_H_ */

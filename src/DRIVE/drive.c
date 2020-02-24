@@ -197,7 +197,7 @@ static void Set_Speed(wejscie_obiektu we){
 	// 1. Sprawdzenie czy nie przekraczamy dozwolonej predkosci
 
 	//DEBUG LED PE9 - START OF THE SETTING SPEED FUNCTION - TURN ON LED
-	LED_PE9_ON;
+	//LED_PE9_ON;
 
 	if(MAX_SPEED_VALUE < (Basic_speed - we.reg_speed)){
 		TIM2->CCR3 = MAX_SPEED_VALUE;
@@ -222,7 +222,7 @@ static void Set_Speed(wejscie_obiektu we){
 	}
 
 	//DEBUG LED PE9 - FINISH - TURN OFF LED
-	LED_PE9_OFF;
+	//LED_PE9_OFF;
 }
 
 #endif

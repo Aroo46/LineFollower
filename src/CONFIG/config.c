@@ -8,7 +8,11 @@
 #include "config.h"
 /**********************************************************************************/
 
+/*******************************VARIABLES******************************************/
+volatile uint16_t ProgTimer2;
+uint8_t Program_state = 0;
 
+/***********************************************************************************/
 /********************************FUNCTIONS******************************************/
 void RCC_Init(void){
 	// wlaczenie zegarow dla poszczegolnych grup
@@ -50,17 +54,17 @@ void Encoder_mode_config (void){
 	TIM8 -> DIER |= TIM_DIER_UIE;
 	TIM8 -> CR1 |= TIM_CR1_CEN; 						//Wlaczenie countera
 }
-// Inicjalizacja Timer'a Counter'a - Przerwanie co 100 ms
+// Inicjalizacja Timer'a Counter'a - Przerwanie co 10 ms
 /*
  * czestotliwosc przerwania Fuev = Ftim(czest. sygnalu zegarowego)/(ARR + 1)*(PSC + 1)
  *
  */
 void Timer_Counter_init(void){
-	//TIMER WYLACZONY!!		- Nie wysylamy informacji o wartosciach liczonych przez enkoder
+	//TIMER WLACZONY!!				- Timer sluzy do stworzenia wlasnych przerwan programowych
 	TIM3 -> PSC = 3999;				// Wlaczenie preskalera
-	TIM3 -> ARR = 1999;				// ustalenie wartosci bloku zliczajacego
+	TIM3 -> ARR = 19;				// ustalenie wartosci bloku zliczajacego
 	TIM3 -> DIER = TIM_DIER_UIE;	// Wlaczenie przerwan dla licznika
-	//TIM3 ->CR1 = TIM_CR1_CEN;		//Wlaczenie licznika
+	TIM3 ->CR1 = TIM_CR1_CEN;		//Wlaczenie licznika
 }
 
 //Konfiguracja portów I/O - funkcja alternatywne, odpowiednie opcje pracy.
@@ -81,7 +85,8 @@ void GPIO_init(void){
 	GPIOD -> OSPEEDR |= GPIO_OSPEEDER_OSPEEDR2_0 | GPIO_OSPEEDER_OSPEEDR3_0 | GPIO_OSPEEDER_OSPEEDR4_0 | GPIO_OSPEEDER_OSPEEDR5_0 | GPIO_OSPEEDER_OSPEEDR6_0;
 
 	//Pull up or pull down - PUPDR register
-	GPIOA -> PUPDR = GPIO_PUPDR_PUPDR8_0 | GPIO_PUPDR_PUPDR9_0; // Pull up mode
+					//**********PULL - UP ********************/ ****PULL-DOWN---****
+	GPIOA -> PUPDR = GPIO_PUPDR_PUPDR8_0 | GPIO_PUPDR_PUPDR9_0 | GPIO_PUPDR_PUPDR0_1;
 	GPIOB -> PUPDR = GPIO_PUPDR_PUPDR11_1; // Pull down
 	GPIOC -> PUPDR = GPIO_PUPDR_PUPDR6_0 | GPIO_PUPDR_PUPDR7_0; // Pull up mode
 	GPIOD -> PUPDR = GPIO_PUPDR_PUPDR2_0 | GPIO_PUPDR_PUPDR3_0 | GPIO_PUPDR_PUPDR4_0 | GPIO_PUPDR_PUPDR5_0 | GPIO_PUPDR_PUPDR6_0; //Pull up mode
@@ -89,4 +94,79 @@ void GPIO_init(void){
 	GPIOB -> OTYPER = GPIO_OTYPER_OT_11; //Open drain type
 
 }
+
+
+/****Button usage***********************************/
+void SuperDebounce (volatile uint32_t *KPIN, uint32_t key_mask, uint16_t rep_time,
+		uint16_t rep_wait, void (*push_proc) (void), void (*rep_proc) (void)){
+
+	enum KS {idle,debounce, go_rep, wait_rep, rep};
+
+	//komórka w pamiêcie RAM przechowuj¹ca stan klawisza,
+	//w jakim siê znajduje, gdy jest wciœniêty
+	static enum KS key_state;
+	static uint8_t last_key;  					//ostatio u¿yty klawisz
+
+	//zmienna key_press to bufor stanu klawisza w trakcie dzia³ania funkcji
+	uint8_t key_press;
+
+	//zabezpieczenie przed jednoczesnym wciskaniem dwóch klawiszy
+	if (last_key && last_key != key_mask ) return;
+
+	key_press = (*KPIN & key_mask);				//stan klawisza - w Boardzie STMa naciskajac klawisz podciagamy do VCC - zwieramy do zasilania
+
+	if( key_press && !key_state){
+		key_state = debounce;  					//jeœli wciœniêty, poczekaj
+		ProgTimer2 = 5;							//50 ms a¿ min¹ drgania styków
+	}else
+		if ( key_state){						//jeœli klawisz wciœniêty a minê³y ju¿ drgania
+
+			if( key_press && debounce == key_state && !ProgTimer2) {
+				key_state = go_rep;
+				ProgTimer2 = 3; 				//poczekaj jeszcze 30 ms po drganiach
+				last_key = key_mask;
+			}else
+
+				//jeœli klawisz zosta³ zwolniony w chwili czekania na funkcjonalnoœc REAPET
+				if (!key_press && key_state > debounce && key_state< rep){
+					//wykonaj funkcje jeœli wskaŸnik ró¿ny od zera
+					if( push_proc)push_proc();   /***klawisz zwolniony wywo³aj funkcje***/
+					key_state = idle; 			 //przejdŸ do stanu oczekiwania
+					last_key = 0;
+				}else
+					//Jeœli min¹³ czas drgañ styków, zacznij odliczac czas na REAPET
+					if ( key_press && go_rep == key_state && !ProgTimer2){
+						//nadanie wartoœci domyœlnych jeœli parametr mia³ wartoœc 0
+						if(!rep_time) rep_time = 20;
+						if(!rep_wait) rep_wait = 150;
+						key_state = wait_rep;
+						ProgTimer2 = rep_wait;
+					}else
+						// jeœli min¹³ czas oczekiwania na REAPET - wykonaj akcje
+						if(key_press && wait_rep == key_state && !ProgTimer2){
+							key_state = rep;
+						}else
+							//tryb powtarzania akcji/funkcji rep_proc, jeœli wskaŸnik ró¿ny od 0
+							//przez ca³y czas, gdy klawisz jest wci¹¿ wciœniêty
+							if(key_press && rep == key_state && !ProgTimer2){
+								ProgTimer2 = rep_time; // za³aduj ponownie czas powtarzania akcji
+								if (rep_proc) rep_proc(); // KEY UP
+							}
+		}
+	//jeœli klawisz zosta³ zwolniony w trybie rep, przejdŸ do stanu oczekiwania
+	if( key_state >= wait_rep && !key_press){
+		key_state = idle;
+		last_key = 0;
+	}
+}
+
+/******Function which will change program state****************/
+void ChangeProgramState (void){
+	if(Program_state){
+		Program_state = 0;							//Zmiana stanu "Program_state" na przeciwny
+	}else{
+		Program_state = 1;
+	}
+}
+
 /**********************************************************************************/
