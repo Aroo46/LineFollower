@@ -22,25 +22,25 @@ volatile char znak;
 /************************** Main Program **************************/
 
 int main (void){
-	RCC_Init();  //wlaczenie taktowania dla poszczegolnych modulow - zawsze na poczatku konfiguracji
+	RCC_Init();  	//wlaczenie taktowania dla poszczegolnych modulow - zawsze na poczatku konfiguracji
 	//Ustawienie CKMODE - na HCLK/4 oraz DUAL mode na Regular group only - dla ADC12 oraz ADC34
 	ADC1_2_COMMON -> CCR = ADC12_CCR_CKMODE | 0b110;
 	ADC3_4_COMMON -> CCR = ADC34_CCR_CKMODE | 0b110;
-	ADC1_Calib(); // Kalibracja ADC1 oraz ADC3
+	ADC1_Calib(); 	// Kalibracja ADC1 oraz ADC3
 	ADC3_Calib();
-	ADC1_Config(); //Konfiguracja ADC1 oraz ADC3
+	ADC1_Config(); 	//Konfiguracja ADC1 oraz ADC3
 	ADC3_Config();
 
 	ADC1->CR |= ADC_CR_ADSTART; // Wystartowanie w koncu konwersji
 	ADC3->CR |= ADC_CR_ADSTART; //Wystartowanie konwersji
 
-	DMA1_Channel1_Config(); //Odpalenie DMA1 kanal 1 - obsluga ADC1
-	DMA2_Channel5_Config(); // Odpalenie DMA2 kanal5 - obsluga ADC3
+	DMA1_Channel1_Config(); 	//Odpalenie DMA1 kanal 1 - obsluga ADC1
+	DMA2_Channel5_Config(); 	// Odpalenie DMA2 kanal5 - obsluga ADC3
 
-	USART_Init(); //inicjalizacja USART
+	USART_Init(); 			//inicjalizacja USART
 
-	GPIO_init(); //Konfiguracja odpowiednich PINów/ Portów
-	Timer_Counter_init(); //Wlaczenie Timera do przerwan "systemowych"
+	GPIO_init(); 			//Konfiguracja odpowiednich PINów/ Portów
+	Timer_Counter_init(); 	//Wlaczenie Timera do przerwan "systemowych"
 
 	PWM_config();
 #if REG_ON == 2
@@ -54,9 +54,9 @@ int main (void){
 	NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
 	NVIC_EnableIRQ(TIM3_IRQn);
 
-	//DRIVER WYLACZONY!!!!!!!!!!! <<<<<--------------- ZOBACZ
+	//DRIVER WLACZONY!!!!!!!!!!! <<<<<--------------- ZOBACZ
 	//Ustawienie driver'a do jazdy do przodu
-	DRIVER_STBY_OFF;		// Stand by - stan wysoki - driver wlaczony. Stan niski - driver uspiony
+	DRIVER_STBY_ON;		// Stand by - stan wysoki - driver wlaczony. Stan niski - driver uspiony
 	DRIVER_AIN1_OFF;
 	DRIVER_AIN2_ON;		// Cztery PINy - definiuja kierunek obrotow silnikow.
 	DRIVER_BIN2_ON;
@@ -64,7 +64,7 @@ int main (void){
 	tr_cls();			// Funkcja czyszczaca terminal
 	tr_cursor_off();	// Funkcja ukrywajaca migajacy kursor na terminalu
 
-#if REG_ON == 1
+#if REG_ON == 1 || REG_ON == 0
 	wejscie_obiektu we = {0};
 	wyjscie_obiektu wyj = {0};
 	wyjscie_obiektu w_zad = {0};
@@ -79,35 +79,50 @@ int main (void){
 #if REG_ON == 1
 		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
 		if(Program_state){
-			w_zad.position = 0;
-			//TIM2->CCR2 = 20;
-			wyj.position = PID_obiekt(we);
-			//Show_PID_test(we,wyj,w_zad);
-			we.reg_speed = reg_PID(w_zad,wyj);
-			//Menu(we, wyj, w_zad);
-			LED_PE9_ON;
+			if(!ProgTimer2){
+				w_zad.position = 0;
+				wyj.position = PID_obiekt(we);
+				we.reg_speed = reg_PID(w_zad,wyj);
+				LED_PE9_OFF;
+			}
 		}else{
-			LED_PE9_OFF;
+			Menu(we, wyj, w_zad);
+			//Show_PID_test(we,wyj,w_zad);
+			LED_PE9_ON;
 		}
 
 #endif
-		//Show_sensors();
 #if REG_ON == 0
-		Drive();
-		TIM2->CCR2 = 40;
-		TIM2->CCR3 = 40;
-		Show_sensors();
+		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
+		if(Program_state){
+			if(!ProgTimer2){
+				Drive();
+				LED_PE9_OFF;
+			}
+		}else{
+			LED_PE9_ON;
+			//Show_sensors();
+			Menu(we,wyj,w_zad);
+		}
 #endif
 
 #if REG_ON == 2
-		Menu(we,wyj,w_zad);
-		wyj.position = PD_obiekt(we);
-		we.reg_speed = reg_PD_pozycja(w_zad, wyj);
-		wyj.speed_of_left_eng = Odczyt_lewy_enkoder();
-		wyj.speed_of_right_eng = Odczyt_prawy_enkoder();
-		we.reg_speed_translation = reg_PD_translacji(we, wyj, w_zad);
-		we.reg_speed_rotation = reg_PD_rotacji(we, wyj, w_zad);
-		//Show_sensors();
+		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
+		if(Program_state){
+			if(!ProgTimer2){
+				wyj.position = PD_obiekt(we);
+				we.reg_speed = reg_PD_pozycja(w_zad, wyj);
+				wyj.speed_of_left_eng = Odczyt_lewy_enkoder();
+				wyj.speed_of_right_eng = Odczyt_prawy_enkoder();
+				we.reg_speed_translation = reg_PD_translacji(we, wyj, w_zad);
+				we.reg_speed_rotation = reg_PD_rotacji(we, wyj, w_zad);
+				LED_PE9_OFF;
+			}
+		}else{
+			Menu(we,wyj,w_zad);
+			//Show_sensors();
+			LED_PE9_ON;
+		}
 
 #endif
 
@@ -312,9 +327,12 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 				znak = ' ';
 			}
 			if(znak == 'q') break;
+#endif
+#if REG_ON == 1
 		}
 		tr_cls();
-#endif
+
+
 	}
 	if(znak == '2'){
 		tr_cls();
@@ -363,6 +381,7 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 				K_D=K_D-0.1;
 				znak = ' ';
 			}
+#endif
 #if REG_ON == 2
 			tr_locate(9,2);
 			USART_puts("\n Wspolczynnik K_t -> f w gore, g w dol = ");
@@ -454,7 +473,7 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 
 		tr_cls();
 	}
-#if (REG_ON == 2 || REG_ON == 1)
+/*#if (REG_ON == 2 || REG_ON == 1)
 	if((znak != '1' && znak != '2')|| znak == '3'){
 		tr_cls();
 #if REG_ON == 2
@@ -482,7 +501,7 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 		USART_puts("\n");
 #endif
 	}
-#endif
+#endif*/
 
 }
 

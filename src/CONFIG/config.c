@@ -54,14 +54,14 @@ void Encoder_mode_config (void){
 	TIM8 -> DIER |= TIM_DIER_UIE;
 	TIM8 -> CR1 |= TIM_CR1_CEN; 						//Wlaczenie countera
 }
-// Inicjalizacja Timer'a Counter'a - Przerwanie co 10 ms
+// Inicjalizacja Timer'a Counter'a - Przerwanie co 5 ms
 /*
  * czestotliwosc przerwania Fuev = Ftim(czest. sygnalu zegarowego)/(ARR + 1)*(PSC + 1)
  *
  */
 void Timer_Counter_init(void){
 	//TIMER WLACZONY!!				- Timer sluzy do stworzenia wlasnych przerwan programowych
-	TIM3 -> PSC = 3999;				// Wlaczenie preskalera
+	TIM3 -> PSC = 1999;				// Wlaczenie preskalera
 	TIM3 -> ARR = 19;				// ustalenie wartosci bloku zliczajacego
 	TIM3 -> DIER = TIM_DIER_UIE;	// Wlaczenie przerwan dla licznika
 	TIM3 ->CR1 = TIM_CR1_CEN;		//Wlaczenie licznika
@@ -117,13 +117,13 @@ void SuperDebounce (volatile uint32_t *KPIN, uint32_t key_mask, uint16_t rep_tim
 
 	if( key_press && !key_state){
 		key_state = debounce;  					//jeœli wciœniêty, poczekaj
-		ProgTimer2 = 5;							//50 ms a¿ min¹ drgania styków
+		ProgTimer2 = 10;						//50 ms a¿ min¹ drgania styków
 	}else
 		if ( key_state){						//jeœli klawisz wciœniêty a minê³y ju¿ drgania
 
 			if( key_press && debounce == key_state && !ProgTimer2) {
 				key_state = go_rep;
-				ProgTimer2 = 3; 				//poczekaj jeszcze 30 ms po drganiach
+				ProgTimer2 = 6; 				//poczekaj jeszcze 30 ms po drganiach
 				last_key = key_mask;
 			}else
 

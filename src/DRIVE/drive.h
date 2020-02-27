@@ -23,10 +23,10 @@
 #define NUMBER_OF_LEFT_SENSORS		4
 #define NUMBER_OF_RIGHT_SENSORS		4
 // 0 - BRAK REGULATORA, 1 - REGULATOR PD NA POZYCJE, 2 - REGULATOR + ENKODERY
-#define REG_ON						1
+#define REG_ON						0
 /*****************************************************************/
 /***************************VARIABLES*****************************/
-#if REG_ON == 1
+#if REG_ON == 1 || REG_ON == 0
 typedef struct{
 	float reg_speed;  	//predkosc obliczona z regulatora
 } wejscie_obiektu;
@@ -69,18 +69,18 @@ extern float K_D_r;		// Wpsolczynnik K_D_r - dla regulatora rotacji
 #endif
 
 #if REG_ON == 0
-uint8_t Lewy_PWM_w_prawo_soft;
-uint8_t Prawy_PWM_w_prawo_soft;
-uint8_t Lewy_PWM_w_prawo;
-uint8_t Prawy_PWM_w_prawo;
-uint8_t Lewy_PWM_w_prawo_hard;
-uint8_t Prawy_PWM_w_prawo_hard;
-uint8_t Lewy_PWM_w_lewo;
-uint8_t Prawy_PWM_w_lewo;
-uint8_t Lewy_PWM_w_lewo_soft;
-uint8_t Prawy_PWM_w_lewo_soft;
-uint8_t Lewy_PWM_w_lewo_hard;
-uint8_t Prawy_PWM_w_lewo_hard;
+extern uint8_t Lewy_PWM_w_prawo_soft;
+extern uint8_t Prawy_PWM_w_prawo_soft;
+extern uint8_t Lewy_PWM_w_prawo;
+extern uint8_t Prawy_PWM_w_prawo;
+extern uint8_t Lewy_PWM_w_prawo_hard;
+extern uint8_t Prawy_PWM_w_prawo_hard;
+extern uint8_t Lewy_PWM_w_lewo;
+extern uint8_t Prawy_PWM_w_lewo;
+extern uint8_t Lewy_PWM_w_lewo_soft;
+extern uint8_t Prawy_PWM_w_lewo_soft;
+extern uint8_t Lewy_PWM_w_lewo_hard;
+extern uint8_t Prawy_PWM_w_lewo_hard;
 #endif
 
 uint8_t sensors_left[4];

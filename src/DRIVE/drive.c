@@ -17,13 +17,29 @@ float K_I;			// Wspolczynnik Ki
 float K_D = 5.6;	// Wspolczynnik Kd
 #endif
 #if REG_ON == 2
-float K_t = 1.5;		// Wspolczynnik K_t - dla regulatora translacji
+float K_t = 1.2;		// Wspolczynnik K_t - dla regulatora translacji
 float K_I_t;		// Wpsolczynnik K_I_t - dla regulatora translacji
 float K_D_t;		// Wpsolczynnik K_D_t - dla regulatora translacji
-float K_r = 1.8;		// Wpsolczynnik K_r - dla regulatora rotacji
+float K_r = 3.6;		// Wpsolczynnik K_r - dla regulatora rotacji
 float K_I_r;		// Wpsolczynnik K_I_r - dla regulatora rotacji
 float K_D_r;		// Wpsolczynnik K_D_r - dla regulatora rotacji
 #endif
+
+#if REG_ON == 0
+uint8_t Lewy_PWM_w_prawo_soft = 13;
+uint8_t Prawy_PWM_w_prawo_soft = 13;
+uint8_t Lewy_PWM_w_prawo = 18;
+uint8_t Prawy_PWM_w_prawo = 18;
+uint8_t Lewy_PWM_w_prawo_hard = 20;
+uint8_t Prawy_PWM_w_prawo_hard = 20;
+uint8_t Lewy_PWM_w_lewo = 18;
+uint8_t Prawy_PWM_w_lewo = 18;
+uint8_t Lewy_PWM_w_lewo_soft = 13;
+uint8_t Prawy_PWM_w_lewo_soft = 13;
+uint8_t Lewy_PWM_w_lewo_hard = 20;
+uint8_t Prawy_PWM_w_lewo_hard = 20;
+#endif
+
 int8_t tab_of_weight_left [NUMBER_OF_LEFT_SENSORS] = {-1, -3, -8, -20};
 int8_t tab_of_weight_right [NUMBER_OF_RIGHT_SENSORS] = {20, 1, 3, 8};
 uint8_t Basic_speed = 20;
@@ -131,7 +147,7 @@ float PID_obiekt (wejscie_obiektu we){
 	Set_Speed(we);
 
 	//DEBUG LED PE8 - COUNT THE SENSORS VALUE - TURN ON LED
-	LED_PE8_ON;
+	//LED_PE8_ON;
 
 	// Przeliczamy dane z czujników
 	for(int8_t sens = NUMBER_OF_LEFT_SENSORS - 1; sens >= 0; sens--){
@@ -152,14 +168,14 @@ float PID_obiekt (wejscie_obiektu we){
 		return position = 0;
 	}
 	// DEBUG LED PE8 - TURN OFF LED
-	LED_PE8_OFF;
+	//LED_PE8_OFF;
 	return position = (position_left + position_right)/ilosc_czujnikow;
 }
 
 float reg_PID (wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 
 	//DEBUG LED PE10 - START PD CONTROLER - TURN ON LED
-	LED_PE10_ON;
+	//LED_PE10_ON;
 
 	//zmienne pomocnicze
 	float p, i, d, reg;
@@ -179,7 +195,7 @@ float reg_PID (wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 
 	//wyznaczenie skladnika rozniczkowego(D)
 	d = K_D * (uchyb-uchyb_pop);
-	uchyb_pop = uchyb;				// zapamietaj chwilowa wartosc bledu
+	uchyb_pop = uchyb;			// zapamietaj chwilowa wartosc bledu
 
 	reg = p+i+d; 				//sygnal wyjsciowy regulatora
 
@@ -187,7 +203,7 @@ float reg_PID (wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 	if(reg < -22) reg = -22;
 
 	//DEBUG LED PE10 - TURN OFF LED
-	LED_PE10_OFF;
+	//LED_PE10_OFF;
 	return reg;
 }
 
