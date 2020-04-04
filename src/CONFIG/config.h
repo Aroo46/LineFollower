@@ -38,7 +38,7 @@
 #define LED_PE10_OFF		GPIOE->BRR=GPIO_BRR_BR_10
 /*********************************************************************************/
 /*******************************VARIABLES******************************************/
-extern volatile uint16_t ProgTimer2;
+extern volatile uint16_t ProgTimer2, ProgTimer;
 extern uint8_t Program_state;
 
 /*********************************************************************************/

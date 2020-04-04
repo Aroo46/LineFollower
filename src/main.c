@@ -54,9 +54,9 @@ int main (void){
 	NVIC_EnableIRQ(TIM1_UP_TIM16_IRQn);
 	NVIC_EnableIRQ(TIM3_IRQn);
 
-	//DRIVER WLACZONY!!!!!!!!!!! <<<<<--------------- ZOBACZ
+	//DRIVER WYLACZONY!!!!!!!!!!! <<<<<--------------- ZOBACZ
 	//Ustawienie driver'a do jazdy do przodu
-	DRIVER_STBY_ON;		// Stand by - stan wysoki - driver wlaczony. Stan niski - driver uspiony
+	DRIVER_STBY_OFF;		// Stand by - stan wysoki - driver wlaczony. Stan niski - driver uspiony
 	DRIVER_AIN1_OFF;
 	DRIVER_AIN2_ON;		// Cztery PINy - definiuja kierunek obrotow silnikow.
 	DRIVER_BIN2_ON;
@@ -79,10 +79,11 @@ int main (void){
 #if REG_ON == 1
 		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
 		if(Program_state){
-			if(!ProgTimer2){
+			if(!ProgTimer){
 				w_zad.position = 0;
 				wyj.position = PID_obiekt(we);
 				we.reg_speed = reg_PID(w_zad,wyj);
+				ProgTimer = 3;
 				LED_PE9_OFF;
 			}
 		}else{
@@ -109,13 +110,14 @@ int main (void){
 #if REG_ON == 2
 		SuperDebounce(&GPIOA->IDR, GPIO_IDR_0, 10, 400, ChangeProgramState, 0);
 		if(Program_state){
-			if(!ProgTimer2){
+			if(!ProgTimer){
 				wyj.position = PD_obiekt(we);
 				we.reg_speed = reg_PD_pozycja(w_zad, wyj);
 				wyj.speed_of_left_eng = Odczyt_lewy_enkoder();
 				wyj.speed_of_right_eng = Odczyt_prawy_enkoder();
 				we.reg_speed_translation = reg_PD_translacji(we, wyj, w_zad);
 				we.reg_speed_rotation = reg_PD_rotacji(we, wyj, w_zad);
+				ProgTimer = 3;
 				LED_PE9_OFF;
 			}
 		}else{
@@ -156,8 +158,11 @@ void USART3_IRQHandler (void){
 
 void TIM3_IRQHandler (void){
 	uint16_t sprawdz_timer;								//Zmienna do obs³ugi timera sprzêtowego
-	sprawdz_timer = ProgTimer2;							//do sprawdz_timer przypisujemy wartoœc timera programowego
-	if(sprawdz_timer) ProgTimer2 = --sprawdz_timer;		//Je¿eli wiêksza od 0 - zmienjszamy j¹ o 1 i przypisujemy do timera programowego
+	sprawdz_timer = ProgTimer;							//do sprawdz_timer przypisujemy wartoœc timera programowego
+	if(sprawdz_timer) ProgTimer = --sprawdz_timer;		//Je¿eli wiêksza od 0 - zmienjszamy j¹ o 1 i przypisujemy do timera programowego
+
+	sprawdz_timer = ProgTimer2;
+	if(sprawdz_timer) ProgTimer2 = --sprawdz_timer;
 
 	if(TIM3->SR & TIM_SR_UIF){
 		TIM3->SR =~TIM_SR_UIF;
@@ -173,10 +178,11 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 	tr_locate(3,2);
 	USART_puts("2 - Utawienia PID \n");
 	tr_locate(5,2);
-	USART_puts("3 - Wlacz logowanie \n");
+	USART_puts("3 - Debug messages \n");
+#if REG_ON == 0
 	if(znak == '1'){
 		tr_cls();
-#if REG_ON == 0
+
 		while(1){
 			TIM2->CCR3 = 0;
 			TIM2->CCR2 = 0;
@@ -327,13 +333,13 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 				znak = ' ';
 			}
 			if(znak == 'q') break;
-#endif
-#if REG_ON == 1
+
 		}
 		tr_cls();
-
-
 	}
+#endif
+#if REG_ON == 1 || REG_ON == 2
+
 	if(znak == '2'){
 		tr_cls();
 		while(1){
@@ -473,6 +479,28 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 
 		tr_cls();
 	}
+	if(znak == '3'){
+		tr_cls();
+		while(1){
+			Show_sensors();
+			tr_locate(22,5);
+			USART_puts("Obliczona pozycja: ");
+			USART_putlong(wyj.position,10);
+			tr_locate(24,5);
+			USART_puts("Wartosc z regulatora pozycji: ");
+			USART_putlong(we.reg_speed,10);
+#if REG_ON == 2
+			tr_locate(26,5);
+			USART_puts("Wartosc z regulatora translacji: ");
+			USART_putlong(we.reg_speed_translation,10);
+			tr_locate(28,5);
+			USART_puts("Wartosc z regulatora rotacji: ");
+			USART_putlong(we.reg_speed_rotation,10);
+#endif
+			if(znak == 'q') break;
+		}
+		tr_cls();
+	}
 /*#if (REG_ON == 2 || REG_ON == 1)
 	if((znak != '1' && znak != '2')|| znak == '3'){
 		tr_cls();
@@ -502,7 +530,6 @@ void Menu (wejscie_obiektu we, wyjscie_obiektu wyj, wyjscie_obiektu w_zad){
 #endif
 	}
 #endif*/
-
 }
 
 #if REG_ON == 2

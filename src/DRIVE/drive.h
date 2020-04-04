@@ -16,14 +16,14 @@
 
 /****************************MAKROS*******************************/
 //Makro definicje dla regulatora PID
-#define TRESHOLD_FOR_SENSORS		150
+#define TRESHOLD_FOR_SENSORS		100
 #define MAX_LEFT_VALUE				255
 #define MAX_RIGHT_VALUE				255
 #define MAX_SPEED_VALUE				30
 #define NUMBER_OF_LEFT_SENSORS		4
 #define NUMBER_OF_RIGHT_SENSORS		4
 // 0 - BRAK REGULATORA, 1 - REGULATOR PD NA POZYCJE, 2 - REGULATOR + ENKODERY
-#define REG_ON						0
+#define REG_ON						2
 /*****************************************************************/
 /***************************VARIABLES*****************************/
 #if REG_ON == 1 || REG_ON == 0

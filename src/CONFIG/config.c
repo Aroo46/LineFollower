@@ -9,7 +9,7 @@
 /**********************************************************************************/
 
 /*******************************VARIABLES******************************************/
-volatile uint16_t ProgTimer2;
+volatile uint16_t ProgTimer2, ProgTimer = 3;
 uint8_t Program_state = 0;
 
 /***********************************************************************************/
@@ -54,15 +54,15 @@ void Encoder_mode_config (void){
 	TIM8 -> DIER |= TIM_DIER_UIE;
 	TIM8 -> CR1 |= TIM_CR1_CEN; 						//Wlaczenie countera
 }
-// Inicjalizacja Timer'a Counter'a - Przerwanie co 5 ms
+// Inicjalizacja Timer'a Counter'a - Przerwanie co 1 ms
 /*
  * czestotliwosc przerwania Fuev = Ftim(czest. sygnalu zegarowego)/(ARR + 1)*(PSC + 1)
  *
  */
 void Timer_Counter_init(void){
 	//TIMER WLACZONY!!				- Timer sluzy do stworzenia wlasnych przerwan programowych
-	TIM3 -> PSC = 1999;				// Wlaczenie preskalera
-	TIM3 -> ARR = 19;				// ustalenie wartosci bloku zliczajacego
+	TIM3 -> PSC = 799;				// Wlaczenie preskalera
+	TIM3 -> ARR = 9;				// ustalenie wartosci bloku zliczajacego
 	TIM3 -> DIER = TIM_DIER_UIE;	// Wlaczenie przerwan dla licznika
 	TIM3 ->CR1 = TIM_CR1_CEN;		//Wlaczenie licznika
 }

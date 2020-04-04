@@ -12,17 +12,17 @@
 #include "../CONFIG/config.h"
 
 #if (REG_ON == 2 || REG_ON == 1)
-float K = 4.1;		// Wspolczynnik K
+float K = 3.7;		// Wspolczynnik K
 float K_I;			// Wspolczynnik Ki
-float K_D = 5.6;	// Wspolczynnik Kd
+float K_D = 2.0;	// Wspolczynnik Kd
 #endif
 #if REG_ON == 2
-float K_t = 1.2;		// Wspolczynnik K_t - dla regulatora translacji
+float K_t = 1.35;		// Wspolczynnik K_t - dla regulatora translacji
 float K_I_t;		// Wpsolczynnik K_I_t - dla regulatora translacji
-float K_D_t;		// Wpsolczynnik K_D_t - dla regulatora translacji
-float K_r = 3.6;		// Wpsolczynnik K_r - dla regulatora rotacji
+float K_D_t = 1.0;		// Wpsolczynnik K_D_t - dla regulatora translacji
+float K_r = 2.4;		// Wpsolczynnik K_r - dla regulatora rotacji
 float K_I_r;		// Wpsolczynnik K_I_r - dla regulatora rotacji
-float K_D_r;		// Wpsolczynnik K_D_r - dla regulatora rotacji
+float K_D_r = 1.1;		// Wpsolczynnik K_D_r - dla regulatora rotacji
 #endif
 
 #if REG_ON == 0
@@ -40,9 +40,9 @@ uint8_t Lewy_PWM_w_lewo_hard = 20;
 uint8_t Prawy_PWM_w_lewo_hard = 20;
 #endif
 
-int8_t tab_of_weight_left [NUMBER_OF_LEFT_SENSORS] = {-1, -3, -8, -20};
-int8_t tab_of_weight_right [NUMBER_OF_RIGHT_SENSORS] = {20, 1, 3, 8};
-uint8_t Basic_speed = 20;
+int8_t tab_of_weight_left [NUMBER_OF_LEFT_SENSORS] = {-1, -5, -8, -20};
+int8_t tab_of_weight_right [NUMBER_OF_RIGHT_SENSORS] = {20, 1, 5, 8};
+uint8_t Basic_speed = 18;
 
 #if REG_ON == 1
 static void Set_Speed(wejscie_obiektu we);
@@ -140,14 +140,15 @@ void Show_PID_test(wejscie_obiektu we, wyjscie_obiektu wy, wyjscie_obiektu zad){
 }
 
 float PID_obiekt (wejscie_obiektu we){
+	//DEBUG LED PE8 - COUNT THE SENSORS VALUE - TURN ON LED
+	LED_PE8_ON;
 	float position = 0, position_left = 0, position_right = 0;
 	uint8_t ilosc_czujnikow = 0;
 
 	// Ustawiamy aktualna - zadana predkosc
 	Set_Speed(we);
 
-	//DEBUG LED PE8 - COUNT THE SENSORS VALUE - TURN ON LED
-	//LED_PE8_ON;
+
 
 	// Przeliczamy dane z czujników
 	for(int8_t sens = NUMBER_OF_LEFT_SENSORS - 1; sens >= 0; sens--){
@@ -168,14 +169,14 @@ float PID_obiekt (wejscie_obiektu we){
 		return position = 0;
 	}
 	// DEBUG LED PE8 - TURN OFF LED
-	//LED_PE8_OFF;
+	LED_PE8_OFF;
 	return position = (position_left + position_right)/ilosc_czujnikow;
 }
 
 float reg_PID (wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 
 	//DEBUG LED PE10 - START PD CONTROLER - TURN ON LED
-	//LED_PE10_ON;
+	LED_PE10_ON;
 
 	//zmienne pomocnicze
 	float p, i, d, reg;
@@ -199,11 +200,11 @@ float reg_PID (wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 
 	reg = p+i+d; 				//sygnal wyjsciowy regulatora
 
-	if(reg > 22) reg = 22;
-	if(reg < -22) reg = -22;
+	if(reg > 35) reg = 35;
+	if(reg < -35) reg = -35;
 
 	//DEBUG LED PE10 - TURN OFF LED
-	//LED_PE10_OFF;
+	LED_PE10_OFF;
 	return reg;
 }
 
@@ -282,6 +283,7 @@ void Show_sensors(void){
 #if REG_ON == 2
 float PD_obiekt(wejscie_obiektu we){
 	float position = 0, position_left = 0, position_right = 0;
+	static float previous_position;
 	uint8_t ilosc_czujnikow = 0;
 
 	//ustawienie predkosci silnikow
@@ -305,17 +307,22 @@ float PD_obiekt(wejscie_obiektu we){
 			ilosc_czujnikow++;
 		}
 	}
-	if(ilosc_czujnikow == 0){
+	if(ilosc_czujnikow == 0 && (previous_position > -7 || previous_position < 7)){
 		TIM2->CCR3 = 0; 		//W zaleznosci od silnika dodajemy badz odejmujemy wartosc
 		TIM2->CCR2 = 0;
+		DRIVER_STBY_OFF;
 		return position = 0;
+	}else if(ilosc_czujnikow == 0 && (previous_position <= -7 || previous_position >= 7 )){
+		position = previous_position;
+	}else if(ilosc_czujnikow != 0){
+		position = (position_left + position_right)/ilosc_czujnikow;
+		previous_position = position;
 	}
 
-	return position = (position_left + position_right)/ilosc_czujnikow;
+	return position;
 }
 
 float reg_PD_pozycja(wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
-
 	//zmienne pomocnicze
 	float p, d, reg;
 	float uchyb;					//uchyb regulacji
@@ -332,14 +339,14 @@ float reg_PD_pozycja(wyjscie_obiektu w_zad, wyjscie_obiektu wy_o){
 
 	reg = p+d; 				//sygnal wyjsciowy regulatora
 
-	if(reg > 30) reg = 30;
-	if(reg < -30) reg = -30;
-
+	if(reg > 35) reg = 35;
+	if(reg < -35) reg = -35;
 	return reg;
 }
 
 float reg_PD_translacji(wejscie_obiektu we, wyjscie_obiektu wy, wyjscie_obiektu zad){
 	//zmienne pomocnicze
+	LED_PE8_ON;
 	float p_t = 0, i_t = 0, d_t = 0, reg_t = 0;
 	float uchyb_t = 0;						//uchyb regulacji
 	static float uchyb_pop_t = 0; 		// uchyb w poprzednim wywolaniu
@@ -361,14 +368,14 @@ float reg_PD_translacji(wejscie_obiektu we, wyjscie_obiektu wy, wyjscie_obiektu 
 
 	reg_t = p_t+i_t+d_t; 				//sygnal wyjsciowy regulatora
 
-	if(reg_t > 30) reg_t = 30;
+	if(reg_t > 35) reg_t = 35;
 	if(reg_t <= 0) reg_t = 0;
-
+	LED_PE8_OFF;
 	return reg_t;
 }
 
 float reg_PD_rotacji(wejscie_obiektu we, wyjscie_obiektu wy, wyjscie_obiektu zad){
-
+	LED_PE10_ON;
 	//zmienne pomocnicze
 	float p_r = 0, i_r = 0, d_r = 0, reg_r = 0;
 	float uchyb_r = 0;					//uchyb regulacji
@@ -394,7 +401,7 @@ float reg_PD_rotacji(wejscie_obiektu we, wyjscie_obiektu wy, wyjscie_obiektu zad
 
 	if(reg_r > 40) reg_r = 40;
 	if(reg_r < -40) reg_r = -40;
-
+	LED_PE10_OFF;
 	return reg_r;
 }
 
